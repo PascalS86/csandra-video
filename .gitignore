@@ -1,4 +1,5 @@
 #Ignore vscode settings
 /.vscode
 /venv
-/src/csandra.video/models
+/src/models
+*.jpg
