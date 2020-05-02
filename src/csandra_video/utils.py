@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import requests
 import json
+import csandra_video.cv_camera as cvc
 import numpy as np
 import tfjs_graph_converter as tfjs
 import tensorflow as tf
@@ -38,6 +39,34 @@ def start_video(n_graph):
     cap.release()
     cv2.destroyAllWindows()
 
+def start_stream():
+    '''
+    starts a video stream in background and returns the frames
+    '''
+    camera = cvc.CVCamera()
+    frame = camera.get_frame()
+    return replace_background(camera, frame)
+
+def replace_background(n_camera,n_frame):
+    img_buffer = np.frombuffer(n_frame, dtype=np.uint8)
+    img = cv2.imdecode(img_buffer, flags=1)
+    mask = get_segementation_mask(n_graph=n_camera.graph, n_image=img)
+    # read in a "virtual background" (should be in 16:9 ratio)
+    replacement_bg_raw = cv2.imread('backgroundtest.jpg')
+
+    # resize to match the frame (width & height from before)
+    height, width = 720, 1280
+    replacement_bg = cv2.resize(replacement_bg_raw, (width, height))
+    # combine the background and foreground, using the mask and its inverse
+    inv_mask = np.bitwise_not(mask)
+    f = np.bitwise_and(img, mask)
+    inv_f = np.bitwise_and(replacement_bg, inv_mask)
+    f = f + inv_f
+    return cv2.imencode('.jpg', f)[1].tobytes()
+
+
+
+
 def download_tfjs_model(n_modelpath=''):
     '''
     downlads a tfjs model to models folder
@@ -68,7 +97,6 @@ def download_tfjs_model(n_modelpath=''):
     json.dump(model_json, json_file)
     json_file.close()
     # load all the weights
-    print(model_json['weightsManifest'][0]['paths'])
     for item in model_json['weightsManifest'][0]['paths']:
         # build the weight path string, based on the given modelpath
         modelpath = str.join('/',n_modelpath.split('/')[0:-1])
@@ -99,7 +127,6 @@ def load_graph_model(n_modelpath=''):
         raise ValueError('request_url should not be an empty string')
     
     # convert model.json into graph model
-    print(tfjs.version)
     graph = tfjs.api.load_graph_model(n_modelpath)
     return graph
 
@@ -132,9 +159,9 @@ def eval_image(n_graph, n_image):
 
     with tf.compat.v1.Session(graph=n_graph) as sess:
         input_tensor_names = tfjs.util.get_input_tensors(n_graph)
-        print(input_tensor_names)
+        #print(input_tensor_names)
         output_tensor_names = tfjs.util.get_output_tensors(n_graph)
-        print(output_tensor_names)
+        #print(output_tensor_names)
         input_tensor = n_graph.get_tensor_by_name(input_tensor_names[0])
         results = sess.run(output_tensor_names, feed_dict={
                         input_tensor: n_image})
@@ -158,11 +185,11 @@ def get_segementation_mask(n_graph=None, n_image=None):
     segmentation_threshold = 0.7
     scores = tf.sigmoid(segments)
     mask = tf.math.greater(scores, tf.constant(segmentation_threshold))
-    print('maskshape', mask.shape)
+    #print('maskshape', mask.shape)
     mask = tf.dtypes.cast(mask, tf.int32)
     mask = np.reshape(
         mask, (mask.shape[0], mask.shape[1]))
-    print('maskValue', mask[:][:])
+    #print('maskValue', mask[:][:])
 
     # Get image from mask
     mask_img = Image.fromarray(mask * 255)

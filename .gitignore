@@ -1,5 +1,6 @@
 #Ignore vscode settings
 /.vscode
 /venv
+/src/csandra_video/__pycache__
 /src/models
 *.jpg

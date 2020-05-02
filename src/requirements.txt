@@ -4,3 +4,4 @@ requests==2.23.0
 pathlib==1.0.1
 tensorflowjs==1.7.4
 pillow==7.1.2
+flask==1.1.2
