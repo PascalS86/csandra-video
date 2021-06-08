@@ -3,5 +3,5 @@ tensorflow==2.1.0
 requests==2.23.0
 pathlib==1.0.1
 tensorflowjs==1.7.4
-pillow==7.1.2
+pillow==8.2.0
 flask==1.1.2
