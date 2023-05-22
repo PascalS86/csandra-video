@@ -1,6 +1,6 @@
 opencv-python==4.2.0.34
 tensorflow==2.1.0
-requests==2.23.0
+requests==2.31.0
 pathlib==1.0.1
 tensorflowjs==1.7.4
 pillow==7.1.2
